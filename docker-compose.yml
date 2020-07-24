@@ -1,0 +1,83 @@
+version: "3.2"
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: ./_docker/nginx/Dockerfile
+    ports:
+    - "91:80"
+    depends_on:
+    - php-fpm
+    volumes:
+    - ./src/public:/srv/www/src/public:cached
+    restart: always
+    tty: true
+    read_only: false
+    privileged: true
+
+  php-fpm:
+    build:
+      context: .
+      dockerfile: ./_docker/php-fpm/Dockerfile
+    depends_on:
+    - mysql
+    - mysql_test
+    - mail
+    volumes:
+    - ./src:/srv/www/src:cached
+    restart: always
+    tty: true
+    read_only: false
+    privileged: true
+
+  nodejs:
+    build:
+      context: .
+      dockerfile: ./_docker/nodejs/Dockerfile
+    volumes:
+    - .:/build
+    working_dir: /build
+
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_DATABASE: local
+      MYSQL_USER: root
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: password
+      TZ: 'Asia/Tokyo'
+    ports:
+    - "3308:3306"
+    volumes:
+    - ./.mysql-data/local:/var/lib/mysql
+    restart: always
+    tty: true
+    read_only: false
+    privileged: true
+
+  mysql_test:
+    image: mysql:5.7
+    environment:
+      MYSQL_DATABASE: test_database
+      MYSQL_USER: root
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: password
+      TZ: 'Asia/Tokyo'
+    ports:
+    - "3309:3306"
+    volumes:
+    - ./.mysql-data/test:/var/lib/mysql
+    restart: always
+    tty: true
+    read_only: false
+    privileged: true
+
+  mail:
+    image: mailhog/mailhog
+    ports:
+    - "8029:8025"
+    - "1029:1025"
+    restart: always
+    tty: true
+    read_only: false
+    privileged: true
